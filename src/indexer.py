@@ -1,4 +1,5 @@
 import pandas as pd
+from elasticsearch import helpers
 
 class EsIndexer:
     def __init__(self,es,index_name,df):
@@ -8,7 +9,7 @@ class EsIndexer:
 
     def is_date_column(self, series):
         try:
-            pd.to_datetime(series, errors='raise')
+            pd.to_datetime(series,format="%Y-%m-%d %H:%M:%S%z",errors='raise')
             return True
         except:
             return False
@@ -29,6 +30,7 @@ class EsIndexer:
                 props[col] = {"type": "float"}
             else:
                 props[col] = {"type": "text"}
+        print("finished the mapping")
         return {"mappings": {"properties": props}}
 
     def create_index(self):
@@ -38,9 +40,15 @@ class EsIndexer:
         self.es.indices.create(index=self.index_name, body=mapping)
         print(f"Index '{self.index_name}' created with mapping.")
 
-
     def index_dataframe(self):
-        for i, record in enumerate(self.df.to_dict(orient="records"), 1):
-            self.es.index(index=self.index_name, id=i, body=record)
-        print(f"{len(self.df)} docs indexed!")
+        actions = [
+            {
+                "_index": self.index_name,
+                "_id": i,
+                "_source": record
+            }
+            for i, record in enumerate(self.df.to_dict(orient="records"), 1)
+        ]
+        helpers.bulk(self.es, actions)
+        print(f"{len(self.df)} docs indexed in bulk!")
         self.es.indices.refresh(index=self.index_name)

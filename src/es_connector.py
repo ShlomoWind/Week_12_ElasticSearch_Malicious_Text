@@ -16,3 +16,4 @@ class EsConnector:
             except Exception:
                 print("Waiting for Elasticsearch...")
                 time.sleep(3)
+        return self.es
