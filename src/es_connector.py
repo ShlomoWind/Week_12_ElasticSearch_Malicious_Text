@@ -1,15 +1,15 @@
 import time
-from config.settings import ES_HOST
 from elasticsearch import Elasticsearch
 
 class EsConnector:
-    def __init__(self):
+    def __init__(self,host):
         self.es = None
+        self.host = host
 
     def connect(self):
         for i in range(10):
             try:
-                self.es = Elasticsearch(ES_HOST, request_timeout=30)
+                self.es = Elasticsearch(self.host, request_timeout=30)
                 if self.es.ping():
                     print("Elasticsearch is ready!")
                     break
